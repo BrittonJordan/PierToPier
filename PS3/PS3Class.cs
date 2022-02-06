@@ -12,6 +12,16 @@ namespace PS3
 
         public void run()
         {
+            int numDestinations = Int32.Parse(ReadLine());
+            int numRoutes = Int32.Parse(ReadLine());
+
+            for(int i = 0; i < numRoutes; i++)
+            {
+                string pair = ReadLine();
+                string[] elements = pair.Split(' ');
+                int dest1 = Int32.Parse(elements[0]);
+                int dest2 = Int32.Parse(elements[1]);
+            }
 
         }
 
