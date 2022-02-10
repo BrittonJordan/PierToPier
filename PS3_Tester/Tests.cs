@@ -20,13 +20,11 @@ namespace PS3_Tester
         private int numDest;
         private Route[] routes;
         bool readDest;
-        bool readRouteNum;
         int currRoute;
 
         public Tests()
         {
             readDest = false;
-            readRouteNum = false;
             currRoute = 0;
         }
 
@@ -36,7 +34,6 @@ namespace PS3_Tester
             Random r = new Random();
             for (int i = 0; i < numRoutes; i++)
             {
-                //rs.SetValue(new Route(r.Next(1, numDestinations), r.Next(1, numDestinations)), i);
                 int from = r.Next(1, numDestinations);
                 int to = r.Next(1, numDestinations);
                 while(to == from)
@@ -45,8 +42,6 @@ namespace PS3_Tester
                 }
 
                 rs[i] = new Route(from, to);
-                //rs[i].one = r.Next(1, numDestinations);
-                //rs[i].two = r.Next(1, numDestinations);
             }
 
             this.routes = rs;
@@ -56,8 +51,8 @@ namespace PS3_Tester
         {
             
             Tests t = new Tests();
-            t.numDest = 10;
-            t.generateRoutes(11, t.numDest);
+            t.numDest = 36;
+            t.generateRoutes(30, t.numDest);
             t.run();
 
         }
@@ -67,12 +62,7 @@ namespace PS3_Tester
             if (!readDest)
             {
                 readDest = true;
-                return numDest.ToString();
-            }
-            else if (!readRouteNum)
-            {
-                readRouteNum = true;
-                return routes.Length.ToString();
+                return numDest.ToString() + " " + routes.Length.ToString();
             }
             else
             {

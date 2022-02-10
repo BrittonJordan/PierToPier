@@ -4,7 +4,8 @@ namespace PS3
 {
     public class PS3Class
     {
-        private long[] connections; // holds numDestinations bitwise set inclusion representations (each is numDestinations long)
+        private long[] connections; // holds numDestinations bitwise set inclusion representations (each is numDestinations long) (connection doesnt include itself)
+        private long[] connectionsInclusive; // used to mirror connections, and identify correct connection using bitwise and
         private long idealSol;
         private long everyIsland;
         private int idealIslandCount;
@@ -18,19 +19,21 @@ namespace PS3
 
         public void run()
         {
-            //WriteLine("test123");
-
-            numDestinations = Int32.Parse(ReadLine());
-            int numRoutes = Int32.Parse(ReadLine());
+            string dumbestStringEverPleaseBeMoreClearInTheInstructionsNextTime = ReadLine();
+            string[] elems = dumbestStringEverPleaseBeMoreClearInTheInstructionsNextTime.Split(' ');
+            numDestinations = Int32.Parse(elems[0]);
+            int numRoutes = Int32.Parse(elems[1]);
 
             connections = new long[numDestinations + 1];  // ignore index 0
+            connectionsInclusive = new long[numDestinations + 1];
+
             everyIsland = 0;
             idealIslandCount = numDestinations;
 
             // Every island is "connected" to itself
             for(int i = 1; i < numDestinations + 1; i++)
             {
-                //connections[i] = connections[i] | ((long)1 << (i - 1));  // Took this out to implement optimization
+                connectionsInclusive[i] = connectionsInclusive[i] | ((long)1 << (i - 1));
 
                 // Compose bitwise representation of every island included in set
                 everyIsland = (long)1 | everyIsland << 1;  // 11111111
@@ -45,18 +48,20 @@ namespace PS3
 
                 // update the connection at connections[dest1]
                 connections[dest1] = connections[dest1] | ((long)1 << (dest2 - 1));
+                //connectionsInclusive[dest1] = connectionsInclusive[dest1] | ((long)1 << (dest2 - 1));
 
                 // update the connection at connections[dest2]
                 connections[dest2] = connections[dest2] | ((long)1 << (dest1 - 1));
+                //connectionsInclusive[dest2] = connectionsInclusive[dest2] | ((long)1 << (dest1 - 1));
             }
 
             long partialSolution = 0; // 000000
             int currIsland = 0;
 
 
-            buildShop(partialSolution, currIsland);
+            buildShop(partialSolution, currIsland, 0);
 
-            WriteLine(idealIslandCount.ToString());
+            WriteLine(idealIslandCount.ToString() + " ");
 
             string IdealSolution = Convert.ToString(idealSol, 2);
             string islands = "";
@@ -73,45 +78,122 @@ namespace PS3
             WriteLine(islands);
         }
 
-        public void buildShop(long partialSol, int currIsland)
+        public void buildShop(long partialSol, int currIsland, int numShops)
         {
             currIsland++;
             if (currIsland > numDestinations)
             {
-                checkIfIdealSol(partialSol);
+                //if(numShops <= idealIslandCount)
+                //{
+                //    idealIslandCount = numShops;
+                //    idealSol = partialSol;
+                //}
+                isSolution(partialSol);
+                return;
+            }
+            if (numShops > idealIslandCount)
+            {
                 return;
             }
 
+            //if (isSolutionV2(partialSol))
+            //{
+            //    if(numShops < idealIslandCount)
+            //    {
+            //        idealIslandCount = numShops;
+            //        idealSol = partialSol;
+            //    }
+            //    return;
+            //}
+
             long partialSolYes = partialSol | ((long)1 << (currIsland - 1));
-            buildShop(partialSolYes, currIsland);  // Yes, build a shop on currIsland
+            numShops++;
+            buildShop(partialSolYes, currIsland, numShops);  // Yes, build a shop on currIsland
 
-            if(connections[currIsland] != 0)
-                buildShop(partialSol, currIsland); // No, don't build a shop on currIsland
-
-            //WriteLine("Done with level " + currIsland);
+            if(isPossibleConnectionAfterNo(partialSol, currIsland))
+                buildShop(partialSol, currIsland, --numShops); // No, don't build a shop on currIsland
         }
 
-        public void checkIfIdealSol(long sol)
+        public bool isPossibleConnectionAfterNo(long partial, int currIsland)
+        {
+            if (connections[currIsland] == 0)
+            {
+                return false;
+            }
+            else
+            {
+                long connectedIslandsWithShops = connections[currIsland] & partial;
+                long currIslandLong = Convert.ToInt64(Math.Pow(2, currIsland - 1));
+
+                // There are no routes connecting islands with shops on them and all of the connected islands have already been decided
+                if (connectedIslandsWithShops == 0 && currIslandLong > connections[currIsland])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        //public void checkIfIdealSol(long sol)
+        //{
+
+        //    if(isSolution(sol) && islandCount <= idealIslandCount)
+        //    {
+        //        idealIslandCount = islandCount;
+        //        idealSol = sol;
+        //    }
+        //}
+
+        public bool isSolution(long sol)
         {
             int islandCount = 0;
             string solution = Convert.ToString(sol, 2);
             long currentCoveredIslands = sol;
 
-            for(int i = 1; i < solution.Length + 1; i++)
+            for (int i = 1; i < solution.Length + 1; i++)
             {
                 int currChar = solution.Length - i;
-                if(solution[currChar] == '1')
+                if (solution[currChar] == '1')
                 {
                     islandCount++;
                     currentCoveredIslands = currentCoveredIslands | (connections[i] << 0);   // Partial solution and the connection of every island in partial solution should touch every island
                 }
             }
 
-            if(currentCoveredIslands == everyIsland && islandCount <= idealIslandCount)
+            if (currentCoveredIslands == everyIsland)
             {
-                idealIslandCount = islandCount;
-                idealSol = sol;
+                if(islandCount <= idealIslandCount)
+                {
+                    idealIslandCount = islandCount;
+                    idealSol = sol;
+                }
+                return true;
             }
+            else
+                return false;
+
+        }
+
+        public bool isSolutionV2(long partialSol)
+        {
+            long currentCoveredIslands = partialSol;
+
+            for(int i = 1; i < connectionsInclusive.Length; i++)
+            {
+                long conn = connectionsInclusive[i];
+                // Does the partial soltuion contain island i
+                if ((conn & partialSol) != 0)
+                {
+                    currentCoveredIslands = currentCoveredIslands | connections[i];
+                }
+            }
+
+            if (currentCoveredIslands == everyIsland)
+            {
+                return true;
+            }
+            else
+                return false;
         }
 
         public virtual string ReadLine()
